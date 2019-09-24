@@ -357,7 +357,7 @@ $(document).ready(function () {
                 });
 
                 message('transaction was generated:', 'ok');
-                const hash = tx.hash(false).toString('hex');
+                const hash = tx.serialize().toString('hex');
                 message(hash);
 
                 makeqr(hash);
@@ -435,7 +435,7 @@ $(document).ready(function () {
                 });
 
                 message('transaction was generated:', 'ok');
-                const hash = tx.hash(false).toString('hex');
+                const hash = tx.serialize().toString('hex');
                 message(hash);
 
                 makeqr(hash);
@@ -506,7 +506,7 @@ $(document).ready(function () {
                 });
 
                 message('transaction was generated:', 'ok');
-                const hash = tx.hash(false).toString('hex');
+                const hash = tx.serialize().toString('hex');
                 message(hash);
 
                 makeqr(hash);
@@ -582,7 +582,7 @@ $(document).ready(function () {
                 });
 
                 message('transaction was generated:', 'ok');
-                const hash = tx.hash(false).toString('hex');
+                const hash = tx.serialize().toString('hex');
                 message(hash);
 
                 makeqr(hash);
@@ -658,7 +658,7 @@ $(document).ready(function () {
                 });
 
                 message('transaction was generated:', 'ok');
-                const hash = tx.hash(false).toString('hex');
+                const hash = tx.serialize().toString('hex');
                 message(hash);
 
                 makeqr(hash);
