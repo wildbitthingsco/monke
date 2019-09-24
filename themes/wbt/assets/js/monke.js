@@ -64,6 +64,11 @@ $(document).ready(function () {
 
             $('.submit').removeClass('hide');
         });
+
+        $('input').off('click').on('click', function (e) {
+            $('.submit').removeClass('hide');
+        });
+
         $('.remove').off('click').on('click', function (e) {
             var $this = $(this).parent('.address-item');
             TweenMax.to($this, .3, {
