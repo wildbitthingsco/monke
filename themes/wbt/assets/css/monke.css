@@ -111,7 +111,7 @@ select{appearance:none;padding-right:36px}
 .progress{color:#D0C7FF;opacity:0;display:none;margin-bottom:15px}
 .progress svg{animation: mi-spin 2s infinite linear;color:#fff;font-size:20px;margin-right:5px}
 .message{}
-.message>*{vertical-align:middle}
+.message>*{vertical-align:middle;word-wrap:break-word}
 .message .icon{color:#8DFF7A;font-size:20px;margin-right:5px}
 .message .error{color:#FB2626}
 .qrcome{max-width:100%;height:auto;margin-top:30px;border-radius:10px;opacity:0}
