@@ -8,7 +8,6 @@ function makenorm() {//красота на поля
 
 addresscount = 1; //изначальное кол-во адресов для отправки
 
-
 $(document).ready(function () {
     var $goagead = $('.goahead');//для эффектов
     TweenMax.to('h1', .7, {//стартовая анимация
@@ -64,6 +63,7 @@ $(document).ready(function () {
 
             $('.submit').removeClass('hide');
         });
+
 
         $('input').off('click').on('click', function (e) {
             $('.submit').removeClass('hide');
@@ -195,17 +195,26 @@ $(document).ready(function () {
             }
         });
         $('.message').removeClass('goeffect');
+
+
     }
 
-    function resetdown(lock=false) {
+    function resetdown(lock = false) {
         //снятие блокировки кнопки и очистка
-        if (!lock) {$('.submit').removeClass('hide');}
+        if (!lock) {
+            $('.submit').removeClass('hide');
+        }
+
+
         TweenMax.to('.progress', .3, {
             opacity: 0, display: "block", delay: 2, onComplete: function () {
 
             }
         });
+
+
     }
+
 
     function makeqr(hashh) {//генерация QR
         $('.message-generator').append('<img class="qrcome" src="https://chart.googleapis.com/chart?chl=' + hashh + '&chs=512x512&cht=qr" alt="qr">');
@@ -260,6 +269,98 @@ $(document).ready(function () {
             message('Check tax coin...my goodness...', 'error');
             resetdown();
             return false;
+        }
+
+        function isHexPrefixed(str) {
+            return str.slice(0, 2) === "0x";
+        }
+
+        /** Removes 0x from a given String */
+        function stripHexPrefix(str) {
+            if (typeof str !== "string") {
+                return str;
+            }
+            return isHexPrefixed(str) ? str.slice(2) : str;
+        }
+
+        /** Pad a string to be even */
+        function padToEven(a) {
+            return a.length % 2 ? "0" + a : a;
+        }
+
+        function intToBuffer(integer) {
+            var hex = intToHex(integer);
+            return buffer.Buffer.from(hex, "hex");
+        }
+
+        function toBuffer(v) {
+            if (!buffer.Buffer.isBuffer(v)) {
+                if (typeof v === "string") {
+                    if (isHexPrefixed(v)) {
+                        return buffer.Buffer.from(padToEven(stripHexPrefix(v)), "hex");
+                    } else {
+                        return buffer.Buffer.from(v);
+                    }
+                } else if (typeof v === "number") {
+                    if (!v) {
+                        return buffer.Buffer.from([]);
+                    } else {
+                        return intToBuffer(v);
+                    }
+                } else if (v === null || v === undefined) {
+                    return buffer.Buffer.from([]);
+                } else if (v instanceof Uint8Array) {
+                    return buffer.Buffer.from(v);
+                } else if (BN.isBN(v)) {
+                    // converts a BN to a Buffer
+                    return buffer.Buffer.from(v.toArray());
+                } else {
+                    throw new Error("invalid type");
+                }
+            }
+            return v;
+        }
+
+        function intToHex(integer) {
+            if (integer < 0) {
+                throw new Error("Invalid integer as argument, must be unsigned!");
+            }
+            var hex = integer.toString(16);
+            return hex.length % 2 ? "0" + hex : hex;
+        }
+
+        function encodeLength(len, offset) {
+            if (len < 56) {
+                return buffer.Buffer.from([len + offset]);
+            } else {
+                var hexLength = intToHex(len);
+                var lLength = hexLength.length / 2;
+                var firstByte = intToHex(offset + 55 + lLength);
+                return buffer.Buffer.from(firstByte + hexLength, "hex");
+            }
+        }
+
+        function encode(input) {
+            if (Array.isArray(input)) {
+                var output = [];
+                for (var i = 0; i < input.length; i++) {
+                    output.push(encode(input[i]));
+                }
+                var buf = buffer.Buffer.concat(output);
+                return buffer.Buffer.concat([encodeLength(buf.length, 192), buf]);
+            } else {
+                var inputBuf = minterUtil.toBuffer(input);
+                return inputBuf.length === 1 && inputBuf[0] < 128
+                    ? inputBuf
+                    : buffer.Buffer.concat([encodeLength(inputBuf.length, 128), inputBuf]);
+            }
+        }
+
+        function buf2hex(buffer) {
+            // buffer is an ArrayBuffer
+            return Array.prototype.map
+                .call(new Uint8Array(buffer), x => ("00" + x.toString(16)).slice(-2))
+                .join("");
         }
 
 
@@ -346,21 +447,36 @@ $(document).ready(function () {
                 }
 
 
+                var ddata = txData.serialize();
+
                 const tx = new minterTx.MinterTx({
                     nonce: `0x${nonce.toString(16)}`,
                     chainId: net ? '0x01' : '0x02',
                     gasPrice: '0x01',
                     gasCoin: minterTx.coinToBuffer(taxcoin),
                     type: mult ? minterTx.TX_TYPE_MULTISEND : minterTx.TX_TYPE_SEND,
-                    data: txData.serialize(),
+                    data: ddata,
                     payload: minterUtil.toBuffer(tmessage),
                 });
 
-                message('transaction was generated:', 'ok');
-                const hash = tx.serialize().toString('hex');
-                message(hash);
 
-                makeqr(hash);
+                var chex = encode([
+                    0x1,
+                    ddata,
+                    minterUtil.toBuffer(tmessage),
+                    0x0,
+                    0x0,
+                    minterTx.coinToBuffer(taxcoin)
+                ]);
+                var hex = buf2hex(chex.buffer);
+
+                message('transaction was generated:', 'ok');
+                message('<a class="button deep" href="https://bip.to/tx?d=' + hex + '">DeepLink to Wallet</a>');
+                const hash = tx.serialize().toString('hex');
+                message('<a class="copy">' + hash + '</a>');
+
+
+                makeqr(hex);
                 break;
             }
             case 'sell': {
@@ -436,7 +552,7 @@ $(document).ready(function () {
 
                 message('transaction was generated:', 'ok');
                 const hash = tx.serialize().toString('hex');
-                message(hash);
+                message('<a class="copy">' + hash + '</a>');
 
                 makeqr(hash);
 
@@ -507,7 +623,7 @@ $(document).ready(function () {
 
                 message('transaction was generated:', 'ok');
                 const hash = tx.serialize().toString('hex');
-                message(hash);
+                message('<a class="copy">' + hash + '</a>');
 
                 makeqr(hash);
 
@@ -583,7 +699,7 @@ $(document).ready(function () {
 
                 message('transaction was generated:', 'ok');
                 const hash = tx.serialize().toString('hex');
-                message(hash);
+                message('<a class="copy">' + hash + '</a>');
 
                 makeqr(hash);
 
@@ -659,7 +775,7 @@ $(document).ready(function () {
 
                 message('transaction was generated:', 'ok');
                 const hash = tx.serialize().toString('hex');
-                message(hash);
+                message('<a class="copy">' + hash + '</a>');
 
                 makeqr(hash);
 
@@ -670,6 +786,7 @@ $(document).ready(function () {
 
 
         //разблокируем кнопку и чистимся
+
         resetdown(true);
     });
 

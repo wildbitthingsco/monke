@@ -123,6 +123,7 @@ select{appearance:none;padding-right:36px}
         transform: rotate(-359deg);
     }
 }
+.copy{text-transform:none;font-size:10px}
 
 .banana{margin-top:50px}
 .banana:hover,.banana:active{opacity:0.2}
